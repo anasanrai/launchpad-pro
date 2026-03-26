@@ -5,33 +5,48 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import MarketResearch from "./pages/MarketResearch";
+import CourseArchitect from "./pages/CourseArchitect";
+import ColdEmailer from "./pages/ColdEmailer";
+import AssetHistory from "./pages/AssetHistory";
+import AssetDetail from "./pages/AssetDetail";
+import Pricing from "./pages/Pricing";
+import Settings from "./pages/Settings";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/market-research" component={MarketResearch} />
+      <Route path="/course-architect" component={CourseArchitect} />
+      <Route path="/cold-emailer" component={ColdEmailer} />
+      <Route path="/assets" component={AssetHistory} />
+      <Route path="/assets/:id" component={AssetDetail} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Toaster />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: "oklch(0.14 0.012 265)",
+                border: "1px solid oklch(0.22 0.012 265)",
+                color: "oklch(0.96 0.005 265)",
+              },
+            }}
+          />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
