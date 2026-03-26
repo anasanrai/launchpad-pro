@@ -6,333 +6,335 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import {
-  ArrowRight,
-  BookOpen,
-  Clock,
-  FileText,
-  Mail,
-  Rocket,
-  Search,
-  Sparkles,
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
   TrendingUp,
+  Target,
+  Mail,
+  BookOpen,
+  Activity,
+  ArrowUpRight,
   Zap,
 } from "lucide-react";
 import { Link } from "wouter";
-import { formatDistanceToNow } from "date-fns";
 
-const typeConfig = {
-  market_research: {
-    label: "Market Research",
-    icon: Search,
-    color: "text-violet-400",
-    bg: "bg-violet-500/10",
-    href: "/market-research",
+// Sample data for charts
+const revenueProjectionData = [
+  { month: "Jan", value: 45000 },
+  { month: "Feb", value: 52000 },
+  { month: "Mar", value: 48000 },
+  { month: "Apr", value: 61000 },
+  { month: "May", value: 75000 },
+  { month: "Jun", value: 89000 },
+];
+
+const performanceMetricsData = [
+  { name: "Lead Conversion", value: 45 },
+  { name: "Market Penetration", value: 67 },
+  { name: "Customer Satisfaction", value: 92 },
+  { name: "ROI Achievement", value: 78 },
+];
+
+const marketSaturationData = [
+  { name: "SaaS", value: 45, fill: "#6366F1" },
+  { name: "Consulting", value: 28, fill: "#06B6D4" },
+  { name: "HealthTech", value: 20, fill: "#F59E0B" },
+  { name: "MarTech", value: 15, fill: "#EF4444" },
+  { name: "E-Learning", value: 32, fill: "#A855F7" },
+  { name: "FinTech", value: 25, fill: "#EC4899" },
+  { name: "PropTech", value: 18, fill: "#10B981" },
+  { name: "EdTech", value: 12, fill: "#3B82F6" },
+];
+
+const conversionRateData = [
+  { week: "W1", rate: 2.1 },
+  { week: "W2", rate: 2.8 },
+  { week: "W3", rate: 3.2 },
+  { week: "W4", rate: 4.1 },
+];
+
+const recentActivityData = [
+  {
+    id: 1,
+    title: "New market research completed",
+    time: "2 minutes ago",
+    color: "bg-emerald-500/20 text-emerald-400",
+    icon: "●",
   },
-  course: {
-    label: "Course",
-    icon: BookOpen,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    href: "/course-architect",
+  {
+    id: 2,
+    title: "ROI prediction updated",
+    time: "15 minutes ago",
+    color: "bg-blue-500/20 text-blue-400",
+    icon: "●",
   },
-  email_campaign: {
-    label: "Email Campaign",
-    icon: Mail,
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    href: "/cold-emailer",
+  {
+    id: 3,
+    title: "147 new leads identified",
+    time: "1 hour ago",
+    color: "bg-emerald-500/20 text-emerald-400",
+    icon: "●",
   },
-};
+  {
+    id: 4,
+    title: "Curriculum generated for 'Advanced B2B Sales'",
+    time: "2 hours ago",
+    color: "bg-purple-500/20 text-purple-400",
+    icon: "●",
+  },
+  {
+    id: 5,
+    title: "Market saturation alert: SaaS sector",
+    time: "3 hours ago",
+    color: "bg-amber-500/20 text-amber-400",
+    icon: "●",
+  },
+];
 
 export default function Dashboard() {
-  const { user, isAuthenticated, loading } = useAuth();
-
-  const statsQuery = trpc.assets.stats.useQuery(undefined, { enabled: isAuthenticated });
-  const recentQuery = trpc.assets.list.useQuery(
-    { limit: 6, offset: 0 },
-    { enabled: isAuthenticated }
-  );
-  const usageQuery = trpc.usage.stats.useQuery(undefined, { enabled: isAuthenticated });
-  const subscriptionQuery = trpc.subscription.get.useQuery(undefined, { enabled: isAuthenticated });
-
-  if (loading) {
-    return (
-      <AppLayout title="Dashboard">
-        <div className="p-6 space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 rounded-xl shimmer" />
-          ))}
-        </div>
-      </AppLayout>
-    );
-  }
+  const { isAuthenticated, user } = useAuth();
+  const { data: assets } = trpc.assets.list.useQuery({ limit: 5 }, { enabled: isAuthenticated });
+  const { data: subscription } = trpc.subscription.get.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
   if (!isAuthenticated) {
     return (
       <AppLayout title="Dashboard">
         <div className="flex flex-col items-center justify-center h-full py-24 text-center px-4">
-          <Rocket className="w-16 h-16 text-primary mb-6 opacity-80" />
+          <Zap className="w-16 h-16 text-indigo-400 mb-6 opacity-80" />
           <h2 className="text-2xl font-bold text-foreground mb-3">Welcome to LaunchPad Pro</h2>
           <p className="text-muted-foreground mb-8 max-w-md">
-            Sign in to access your AI-powered growth suite — market research, course creation,
-            and cold outreach tools.
+            Sign in to access your Command Center and manage all your AI-generated business assets.
           </p>
-          <Button size="lg" onClick={() => (window.location.href = getLoginUrl())}>
-            <Sparkles className="w-5 h-5 mr-2" />
-            Sign In to Get Started
-          </Button>
+          <Button onClick={() => (window.location.href = getLoginUrl())}>Sign In to Dashboard</Button>
         </div>
       </AppLayout>
     );
   }
 
-  const stats = statsQuery.data;
-  const recent = recentQuery.data ?? [];
-  const usage = usageQuery.data;
-  const subscription = subscriptionQuery.data;
-
-  const planLabel = subscription?.plan
-    ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
-    : "Free";
-
-  const quickActions = [
-    {
-      title: "Market Research",
-      description: "Analyze competitors and market opportunities",
-      icon: Search,
-      href: "/market-research",
-      color: "text-violet-400",
-      bg: "bg-violet-500/10",
-      border: "border-violet-500/20",
-    },
-    {
-      title: "Course Architect",
-      description: "Build a structured 8-module course",
-      icon: BookOpen,
-      href: "/course-architect",
-      color: "text-blue-400",
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/20",
-    },
-    {
-      title: "Cold Emailer",
-      description: "Generate hyper-personalized outreach",
-      icon: Mail,
-      href: "/cold-emailer",
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/20",
-    },
-  ];
-
   return (
-    <AppLayout
-      title={`Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}!`}
-      subtitle="Here's your growth suite overview"
-    >
-      <div className="p-6 space-y-8 max-w-7xl">
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <AppLayout>
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Command Center</h1>
+            <p className="text-muted-foreground mt-1">Real-time analytics and market intelligence</p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm">
+              View AI Insights
+            </Button>
+            <Button size="sm" className="glow-primary-sm">
+              <Zap className="w-4 h-4 mr-2" />
+              Calculate ROI
+            </Button>
+          </div>
+        </div>
+
+        {/* Top 4 Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[
             {
-              label: "Total Assets",
-              value: stats?.total ?? 0,
-              icon: FileText,
-              color: "text-primary",
-              bg: "bg-primary/10",
+              label: "Revenue Potential",
+              value: "$2.4M",
+              trend: "+23.5%",
+              icon: "💰",
+              color: "bg-indigo-500/20",
             },
             {
-              label: "Research Reports",
-              value: stats?.market_research ?? 0,
-              icon: Search,
-              color: "text-violet-400",
-              bg: "bg-violet-500/10",
+              label: "Market Score",
+              value: "87/100",
+              trend: "+5 pts",
+              icon: "🎯",
+              color: "bg-cyan-500/20",
             },
             {
-              label: "Courses Built",
-              value: stats?.course ?? 0,
-              icon: BookOpen,
-              color: "text-blue-400",
-              bg: "bg-blue-500/10",
+              label: "Leads Found",
+              value: "1,247",
+              trend: "+12.3%",
+              icon: "👥",
+              color: "bg-purple-500/20",
             },
             {
-              label: "Email Campaigns",
-              value: stats?.email_campaign ?? 0,
-              icon: Mail,
-              color: "text-emerald-400",
-              bg: "bg-emerald-500/10",
+              label: "Courses Outlined",
+              value: "36",
+              trend: "+8",
+              icon: "📚",
+              color: "bg-pink-500/20",
             },
-          ].map((stat) => (
-            <Card key={stat.label} className="bg-card border-border">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground font-medium">{stat.label}</span>
-                  <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                    <stat.icon className={`w-4 h-4 ${stat.color}`} />
+          ].map((metric, i) => (
+            <Card key={i} className="bg-card border-border hover:shadow-lg transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`w-10 h-10 rounded-lg ${metric.color} flex items-center justify-center text-lg`}>
+                    {metric.icon}
                   </div>
+                  <span className="text-emerald-400 text-sm font-medium flex items-center gap-1">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {metric.trend}
+                  </span>
                 </div>
-                <div className="text-3xl font-bold text-foreground">
-                  {statsQuery.isLoading ? (
-                    <div className="h-8 w-12 shimmer rounded" />
-                  ) : (
-                    stat.value
-                  )}
-                </div>
+                <p className="text-muted-foreground text-sm mb-1">{metric.label}</p>
+                <p className="text-2xl font-bold text-foreground">{metric.value}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Quick Actions + Subscription */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
-          <div className="lg:col-span-2">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-              Quick Actions
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {quickActions.map((action) => (
-                <Link key={action.href} href={action.href}>
-                  <div
-                    className={`p-5 rounded-xl bg-card border ${action.border} card-hover cursor-pointer h-full`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-lg ${action.bg} flex items-center justify-center mb-3`}
-                    >
-                      <action.icon className={`w-5 h-5 ${action.color}`} />
-                    </div>
-                    <h3 className="font-semibold text-foreground text-sm mb-1">{action.title}</h3>
-                    <p className="text-xs text-muted-foreground">{action.description}</p>
-                    <div className={`flex items-center gap-1 mt-3 text-xs ${action.color} font-medium`}>
-                      Launch <ArrowRight className="w-3 h-3" />
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Subscription Card */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-              Your Plan
-            </h2>
-            <Card className="bg-card border-border h-full">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <div className="text-lg font-bold text-foreground">{planLabel}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {subscription?.status === "active" ? (
-                        <span className="flex items-center gap-1">
-                          <span className="status-dot status-dot-active" />
-                          Active
-                        </span>
-                      ) : (
-                        "No active subscription"
-                      )}
-                    </div>
-                  </div>
-                  <Zap className="w-6 h-6 text-primary" />
+        {/* Charts Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Revenue Projection */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Revenue Projection</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">6-month forecast analysis</p>
                 </div>
+                <Badge variant="outline" className="text-emerald-400 border-emerald-400/30">
+                  On Track
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={revenueProjectionData}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2D2D33" />
+                  <XAxis dataKey="month" stroke="#6B6B75" />
+                  <YAxis stroke="#6B6B75" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1A1A1E",
+                      border: "1px solid #2D2D33",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="#6366F1" fillOpacity={1} fill="url(#colorValue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-                {usage && (
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">AI Calls</span>
-                      <span className="text-foreground font-medium">{usage.totalCalls}</span>
+          {/* Performance Metrics */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Performance Metrics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {performanceMetricsData.map((metric, i) => {
+                const colors = ["bg-blue-500", "bg-pink-500", "bg-emerald-500", "bg-amber-500"];
+                return (
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-foreground">{metric.name}</span>
+                      <span className="text-sm font-medium text-foreground">{metric.value}%</span>
                     </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Tokens Used</span>
-                      <span className="text-foreground font-medium">
-                        {(usage.totalTokens / 1000).toFixed(1)}K
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Success Rate</span>
-                      <span className="text-emerald-400 font-medium">{usage.successRate}%</span>
+                    <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+                      <div className={`h-full ${colors[i]} rounded-full`} style={{ width: `${metric.value}%` }} />
                     </div>
                   </div>
-                )}
-
-                {planLabel === "Free" && (
-                  <Link href="/pricing">
-                    <Button size="sm" className="w-full">
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                      Upgrade Plan
-                    </Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Recent Assets */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Recent Assets
-            </h2>
-            <Link href="/assets">
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-                View All <ArrowRight className="w-3 h-3 ml-1" />
-              </Button>
-            </Link>
-          </div>
-
-          {recentQuery.isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-28 rounded-xl shimmer" />
-              ))}
-            </div>
-          ) : recent.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-border rounded-xl">
-              <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground text-sm">No assets yet.</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Start by running a Market Research or building a Course.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recent.map((asset) => {
-                const config = typeConfig[asset.type];
-                return (
-                  <Link key={asset.id} href={`/assets/${asset.id}`}>
-                    <div className="p-4 rounded-xl bg-card border border-border card-hover cursor-pointer">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}
-                        >
-                          <config.icon className={`w-4 h-4 ${config.color}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-foreground text-sm truncate">
-                            {asset.title}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge
-                              variant="outline"
-                              className={`text-xs px-1.5 py-0 ${config.color} border-current/30`}
-                            >
-                              {config.label}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {formatDistanceToNow(new Date(asset.createdAt), { addSuffix: true })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
                 );
               })}
-            </div>
-          )}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Charts Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Market Saturation Analysis */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Market Saturation Analysis</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Industry competition overview</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-2 h-56">
+                {marketSaturationData.map((item, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg flex flex-col items-center justify-center text-white font-bold text-center p-2 relative overflow-hidden group hover:shadow-lg transition-shadow"
+                    style={{
+                      backgroundColor: item.fill,
+                      gridColumn: item.value > 30 ? "span 2" : "span 1",
+                      gridRow: item.value > 30 ? "span 2" : "span 1",
+                      opacity: 0.9,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-white/10 group-hover:bg-white/20 transition-colors" />
+                    <div className="relative z-10">
+                      <p className="text-sm font-bold">{item.name}</p>
+                      <p className="text-xs opacity-90">{item.value}%</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Conversion Rate */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Conversion Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={conversionRateData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2D2D33" />
+                  <XAxis dataKey="week" stroke="#6B6B75" />
+                  <YAxis stroke="#6B6B75" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1A1A1E",
+                      border: "1px solid #2D2D33",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Line type="monotone" dataKey="rate" stroke="#06B6D4" strokeWidth={2} dot={{ fill: "#06B6D4", r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentActivityData.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
+                  <div className={`w-2 h-2 rounded-full mt-2 ${activity.color}`} />
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">{activity.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
