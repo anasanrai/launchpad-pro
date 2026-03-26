@@ -30,6 +30,7 @@ import {
 import { useState } from "react";
 import { Streamdown } from "streamdown";
 import { Link } from "wouter";
+import { exportToPDF } from "@/lib/pdf-export";
 
 const depthOptions = [
   { value: "quick", label: "Quick Scan", desc: "~2 min, key insights" },
@@ -52,6 +53,7 @@ export default function MarketResearch() {
   const [depth, setDepth] = useState<"quick" | "standard" | "comprehensive">("comprehensive");
   const [provider, setProvider] = useState<"auto" | "openrouter" | "gemini" | "openai" | "anthropic">("auto");
   const [result, setResult] = useState<{ content: string; assetId?: number; model: string; provider: string } | null>(null);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const generateMutation = trpc.marketResearch.generate.useMutation({
     onSuccess: (data) => {
@@ -90,6 +92,24 @@ export default function MarketResearch() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Downloaded as Markdown");
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!result?.content) return;
+    setIsExportingPDF(true);
+    try {
+      await exportToPDF({
+        filename: `market-research-${topic.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
+        title: `Market Research: ${topic}`,
+        content: result.content,
+        type: "market_research",
+      });
+      toast.success("PDF exported successfully!");
+    } catch (err) {
+      toast.error("Failed to export PDF");
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
@@ -300,6 +320,14 @@ export default function MarketResearch() {
                       <Button variant="outline" size="sm" onClick={handleDownload}>
                         <Download className="w-3.5 h-3.5 mr-1.5" />
                         .md
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExportingPDF}>
+                        {isExportingPDF ? (
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5 mr-1.5" />
+                        )}
+                        PDF
                       </Button>
                     </div>
                   </div>

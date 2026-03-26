@@ -13,6 +13,7 @@ import AssetHistory from "./pages/AssetHistory";
 import AssetDetail from "./pages/AssetDetail";
 import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
+import ROIPredictor from "./pages/ROIPredictor";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/cold-emailer" component={ColdEmailer} />
       <Route path="/assets" component={AssetHistory} />
       <Route path="/assets/:id" component={AssetDetail} />
+      <Route path="/roi-predictor" component={ROIPredictor} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/settings" component={Settings} />
       <Route path="/404" component={NotFound} />

@@ -388,6 +388,123 @@ const subscriptionRouter = router({
   }),
 });
 
+// ─── ROI Predictor Router ───────────────────────────────────────────────────────
+
+const roiPredictorRouter = router({
+  predict: protectedProcedure
+    .input(
+      z.object({
+        marketResearchContent: z.string().min(100),
+        topic: z.string().min(3).max(500),
+        targetMarket: z.string().max(300).optional().default(""),
+        provider: z.enum(["auto", "openrouter", "gemini", "openai", "anthropic"]).default("auto"),
+        saveToAssets: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const start = Date.now();
+      const prompt = {
+        system: `You are an expert business analyst and market strategist. Analyze market research data and predict success probability and revenue potential for a business opportunity. Output ONLY valid JSON with no markdown formatting.`,
+        user: `Based on this market research:
+\n${input.marketResearchContent}\n\nFor the niche: "${input.topic}"${input.targetMarket ? `\nTarget market: ${input.targetMarket}` : ""}
+
+Provide a JSON analysis with:
+{
+  "successProbability": <0-100 number>,
+  "revenuePotentialUSD": <estimated annual revenue>,
+  "marketSizeEstimate": <total addressable market>,
+  "competitionLevel": "low" | "medium" | "high",
+  "timeToBreakeven": "<months>",
+  "keyRisks": ["risk1", "risk2", "risk3"],
+  "keyOpportunities": ["opp1", "opp2", "opp3"],
+  "recommendedStrategy": "<1-2 sentence strategy>"
+}`,
+      };
+
+      let result;
+      try {
+        result = await generateAI(
+          [
+            { role: "system", content: prompt.system },
+            { role: "user", content: prompt.user },
+          ],
+          {
+            provider: input.provider,
+            maxTokens: 1024,
+            temperature: 0.7,
+          }
+        );
+      } catch (err) {
+        await logUsage({
+          userId: ctx.user.id,
+          feature: "market_research",
+          tokensUsed: 0,
+          success: 0,
+          durationMs: Date.now() - start,
+        });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: (err as Error).message });
+      }
+
+      await logUsage({
+        userId: ctx.user.id,
+        feature: "market_research",
+        tokensUsed: result.tokensUsed,
+        model: result.model,
+        success: 1,
+        durationMs: Date.now() - start,
+      });
+
+      let parsed;
+      try {
+        parsed = JSON.parse(result.content);
+      } catch {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to parse ROI prediction from AI",
+        });
+      }
+
+      let assetId: number | undefined;
+      if (input.saveToAssets) {
+        const markdown = `# ROI Prediction: ${input.topic}
+
+## Success Probability
+**${parsed.successProbability}%**
+
+## Revenue Potential
+$${parsed.revenuePotentialUSD?.toLocaleString() || "N/A"} annually
+
+## Market Size Estimate
+$${parsed.marketSizeEstimate?.toLocaleString() || "N/A"}
+
+## Competition Level
+${parsed.competitionLevel}
+
+## Time to Breakeven
+${parsed.timeToBreakeven}
+
+## Key Risks
+${parsed.keyRisks?.map((r: string) => `- ${r}`).join("\n") || "N/A"}
+
+## Key Opportunities
+${parsed.keyOpportunities?.map((o: string) => `- ${o}`).join("\n") || "N/A"}
+
+## Recommended Strategy
+${parsed.recommendedStrategy || "N/A"}
+`;
+        assetId = await createAsset({
+          userId: ctx.user.id,
+          type: "market_research",
+          title: `ROI Prediction: ${input.topic}`,
+          content: markdown,
+          metadata: parsed,
+        });
+      }
+
+      return { prediction: parsed, assetId, model: result.model, provider: result.provider };
+    }),
+});
+
 // ─── Usage Router ─────────────────────────────────────────────────────────────
 
 const usageRouter = router({
@@ -410,6 +527,7 @@ export const appRouter = router({
   marketResearch: marketResearchRouter,
   courseArchitect: courseArchitectRouter,
   coldEmailer: coldEmailerRouter,
+  roiPredictor: roiPredictorRouter,
   assets: assetsRouter,
   subscription: subscriptionRouter,
   usage: usageRouter,

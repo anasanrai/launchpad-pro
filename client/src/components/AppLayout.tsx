@@ -16,6 +16,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  TrendingUp,
   X,
   Zap,
 } from "lucide-react";
@@ -44,6 +45,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Market Research", href: "/market-research", icon: Search, isNew: false },
+  { label: "ROI Predictor", href: "/roi-predictor", icon: TrendingUp, isNew: true },
   { label: "Course Architect", href: "/course-architect", icon: BookOpen },
   { label: "Cold Emailer", href: "/cold-emailer", icon: Mail },
   { label: "Asset Library", href: "/assets", icon: History },
