@@ -98,9 +98,7 @@ export default function AppLayout({ children, title, subtitle, actions }: AppLay
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center glow-primary-sm flex-shrink-0">
-          <Rocket className="w-4 h-4 text-primary-foreground" />
-        </div>
+        <img src="/logo.svg" alt="LaunchPad Pro" className="w-8 h-8 flex-shrink-0" />
         <div className="flex flex-col min-w-0">
           <span className="font-bold text-sm text-foreground leading-tight">LaunchPad Pro</span>
           <span className="text-xs text-muted-foreground leading-tight">B2B Growth Suite</span>
