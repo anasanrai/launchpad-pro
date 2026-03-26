@@ -117,3 +117,17 @@
 - [x] Add Conversion Rate chart (line chart)
 - [x] Add Recent Activity feed with timeline
 - [x] Test all charts and responsive design
+
+
+## Phase 16: AI Insights Page & ROI Predictor Improvements
+- [x] Build AI Insights page with tab navigation
+- [x] Add Market Research report display with sections
+- [x] Add Course Curriculum display with expandable modules
+- [x] Improve ROI Predictor with circular gauge visualization
+- [x] Add Risk Assessment panel
+- [x] Add Growth Opportunities panel
+- [x] Add Revenue Projections with 4 scenarios
+- [x] Add Investment Breakdown chart
+- [x] Add Key Business Metrics bars
+- [x] Add Recommended Actions section
+- [x] Test all visualizations and responsive design

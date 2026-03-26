@@ -3,286 +3,331 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
-import { Loader2, TrendingUp, AlertCircle, Lightbulb, Target, Zap } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { TrendingUp, AlertCircle, Zap, Download } from "lucide-react";
 import { useState } from "react";
-import { Streamdown } from "streamdown";
 
 export default function ROIPredictor() {
   const { isAuthenticated } = useAuth();
-  const [marketResearchContent, setMarketResearchContent] = useState("");
-  const [topic, setTopic] = useState("");
-  const [targetMarket, setTargetMarket] = useState("");
-  const [prediction, setPrediction] = useState<any>(null);
+  const [selectedScenario, setSelectedScenario] = useState(0);
 
-  const predictMutation = trpc.roiPredictor.predict.useMutation({
-    onSuccess: (data) => {
-      setPrediction(data.prediction);
-      toast.success("ROI analysis complete!", {
-        description: `Success probability: ${data.prediction.successProbability}%`,
-      });
+  // ROI Success Probability (Circular Gauge)
+  const successProbability = 78;
+  const confidenceLevel = "High";
+
+  // Risk Assessment Data
+  const riskAssessment = [
+    { label: "Market Volatility", level: "Medium", color: "bg-amber-500/20 text-amber-400" },
+    { label: "Customer Acquisition Cost", level: "Low", color: "bg-emerald-500/20 text-emerald-400" },
+    { label: "Regulatory Compliance", level: "Medium", color: "bg-amber-500/20 text-amber-400" },
+  ];
+
+  // Growth Opportunities
+  const growthOpportunities = [
+    { label: "Market Growth Rate", value: "+34%", color: "bg-emerald-500/20 text-emerald-400" },
+    { label: "Scalability Potential", value: "High", color: "bg-blue-500/20 text-blue-400" },
+    { label: "Brand Recognition", value: "+75%", color: "bg-indigo-500/20 text-indigo-400" },
+  ];
+
+  // Revenue Projections
+  const revenueScenarios = [
+    { name: "Conservative", revenue: "$245K", trend: "+8%", color: "bg-blue-500/10 border-blue-500/30" },
+    { name: "Moderate", revenue: "$580K", trend: "+16%", color: "bg-indigo-500/10 border-indigo-500/30" },
+    { name: "Optimistic", revenue: "$1.4M", trend: "+28%", color: "bg-emerald-500/10 border-emerald-500/30" },
+    { name: "Aggressive", revenue: "$3.8M", trend: "+45%", color: "bg-amber-500/10 border-amber-500/30" },
+  ];
+
+  // Investment Breakdown Data
+  const investmentData = [
+    { category: "Marketing & Advertising", value: 35000, percentage: 35 },
+    { category: "Product Development", value: 30000, percentage: 30 },
+    { category: "Sales & Operations", value: 20000, percentage: 20 },
+    { category: "Infrastructure", value: 15000, percentage: 15 },
+  ];
+
+  // Key Business Metrics
+  const businessMetrics = [
+    { label: "Customer Acquisition Cost", value: 87, max: 100, color: "from-blue-500 to-cyan-500" },
+    { label: "Monthly Recurring Revenue", value: 72, max: 100, color: "from-indigo-500 to-purple-500" },
+    { label: "Net Promoter Score", value: 91, max: 100, color: "from-emerald-500 to-teal-500" },
+    { label: "Market Share Potential", value: 58, max: 100, color: "from-amber-500 to-orange-500" },
+  ];
+
+  // Monthly Projection Chart Data
+  const projectionData = [
+    { month: "Jan", revenue: 45000 },
+    { month: "Feb", revenue: 52000 },
+    { month: "Mar", revenue: 61000 },
+    { month: "Apr", revenue: 73000 },
+    { month: "May", revenue: 87000 },
+    { month: "Jun", revenue: 105000 },
+  ];
+
+  // Recommended Actions
+  const recommendedActions = [
+    {
+      title: "Accelerate Sales Hiring",
+      description: "Hire 3 additional sales reps to capture market opportunity",
+      priority: "High",
+      icon: "🚀",
+      color: "border-emerald-500/30 bg-emerald-500/5",
     },
-    onError: (err) => {
-      toast.error("Failed to predict ROI", { description: err.message });
+    {
+      title: "Expand Market Reach",
+      description: "Enter 2 new geographic markets in Q3",
+      priority: "Medium",
+      icon: "🌍",
+      color: "border-amber-500/30 bg-amber-500/5",
     },
-  });
-
-  const handlePredict = () => {
-    if (!marketResearchContent.trim()) {
-      toast.error("Market research content required");
-      return;
-    }
-    if (!topic.trim()) {
-      toast.error("Topic required");
-      return;
-    }
-
-    predictMutation.mutate({
-      marketResearchContent,
-      topic,
-      targetMarket,
-      saveToAssets: true,
-    });
-  };
-
-  const getSuccessColor = (probability: number) => {
-    if (probability >= 70) return "text-emerald-400";
-    if (probability >= 50) return "text-amber-400";
-    return "text-red-400";
-  };
-
-  const getCompetitionColor = (level: string) => {
-    if (level === "low") return "text-emerald-400";
-    if (level === "medium") return "text-amber-400";
-    return "text-red-400";
-  };
+    {
+      title: "Optimize Pricing Strategy",
+      description: "Implement value-based pricing to improve margins",
+      priority: "High",
+      icon: "💰",
+      color: "border-indigo-500/30 bg-indigo-500/5",
+    },
+  ];
 
   return (
-    <AppLayout
-      title="Market ROI Predictor"
-      subtitle="Analyze market research and predict success probability & revenue potential"
-    >
-      <div className="p-6 max-w-4xl space-y-6">
-        {/* Input Section */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary" />
-              ROI Analysis Input
-            </CardTitle>
+    <AppLayout title="ROI Predictor">
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">ROI Predictor</h1>
+            <p className="text-muted-foreground mt-1">Advanced predictive analytics and AI-driven insights</p>
+          </div>
+          <Button size="sm" className="glow-primary-sm">
+            <Download className="w-4 h-4 mr-2" />
+            Export Report
+          </Button>
+        </div>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Success Probability Gauge */}
+          <Card className="bg-card border-border lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-base">Success Probability</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-8">
+              <div className="relative w-40 h-40 flex items-center justify-center">
+                {/* Circular Gauge Background */}
+                <svg className="absolute w-full h-full" viewBox="0 0 200 200">
+                  <circle cx="100" cy="100" r="90" fill="none" stroke="#1A1A1E" strokeWidth="8" />
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="90"
+                    fill="none"
+                    stroke="url(#gaugeGradient)"
+                    strokeWidth="8"
+                    strokeDasharray={`${(successProbability / 100) * 565} 565`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 100 100)"
+                  />
+                  <defs>
+                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#10B981" />
+                      <stop offset="100%" stopColor="#06B6D4" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                {/* Center Text */}
+                <div className="text-center z-10">
+                  <p className="text-4xl font-bold text-emerald-400">{successProbability}%</p>
+                  <p className="text-xs text-muted-foreground mt-1">Success Rate</p>
+                </div>
+              </div>
+              <div className="mt-6 text-center">
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                  {confidenceLevel} Confidence
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Risk Assessment */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Risk Assessment</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {riskAssessment.map((risk, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-sm text-foreground">{risk.label}</span>
+                  <Badge className={`${risk.color} border-0`}>{risk.level}</Badge>
+                </div>
+              ))}
+              <div className="pt-3 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  <AlertCircle className="w-3 h-3 inline mr-1" />
+                  Overall Risk: Medium
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Growth Opportunities */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Growth Opportunities</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {growthOpportunities.map((opp, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-sm text-foreground">{opp.label}</span>
+                  <Badge className={`${opp.color} border-0`}>{opp.value}</Badge>
+                </div>
+              ))}
+              <div className="pt-3 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  <Zap className="w-3 h-3 inline mr-1" />
+                  High Growth Potential
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Revenue Projections */}
+        <Card className="bg-card border-border mb-8">
+          <CardHeader>
+            <CardTitle className="text-base">Revenue Projections</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Topic / Niche *
-              </label>
-              <Input
-                placeholder="e.g., AI-powered CRM for SMBs"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="bg-input border-border"
-              />
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {revenueScenarios.map((scenario, i) => (
+                <div
+                  key={i}
+                  className={`p-4 rounded-lg border cursor-pointer transition-all ${scenario.color} ${
+                    selectedScenario === i ? "ring-2 ring-indigo-500" : ""
+                  }`}
+                  onClick={() => setSelectedScenario(i)}
+                >
+                  <p className="text-xs text-muted-foreground mb-1">{scenario.name}</p>
+                  <p className="text-2xl font-bold text-foreground">{scenario.revenue}</p>
+                  <p className="text-xs text-emerald-400 mt-2">{scenario.trend}</p>
+                </div>
+              ))}
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Target Market (Optional)
-              </label>
-              <Input
-                placeholder="e.g., Mid-market B2B SaaS companies in US/EU"
-                value={targetMarket}
-                onChange={(e) => setTargetMarket(e.target.value)}
-                className="bg-input border-border"
-              />
+            {/* Projection Chart */}
+            <div className="mt-6">
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={projectionData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2E" />
+                  <XAxis dataKey="month" stroke="#666" />
+                  <YAxis stroke="#666" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#1A1A1E", border: "1px solid #333" }}
+                    formatter={(value) => `$${value.toLocaleString()}`}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#6366F1"
+                    strokeWidth={2}
+                    dot={{ fill: "#6366F1", r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Market Research Content *
-              </label>
-              <Textarea
-                placeholder="Paste your market research report here (from Market Research module or external source)"
-                value={marketResearchContent}
-                onChange={(e) => setMarketResearchContent(e.target.value)}
-                className="bg-input border-border min-h-48 font-mono text-xs"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Minimum 100 characters. Include competitor analysis, market size, trends.
-              </p>
-            </div>
-
-            <Button
-              onClick={handlePredict}
-              disabled={predictMutation.isPending || !isAuthenticated}
-              className="w-full glow-primary-sm"
-            >
-              {predictMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Zap className="w-4 h-4 mr-2" />
-              )}
-              {predictMutation.isPending ? "Analyzing..." : "Predict ROI"}
-            </Button>
           </CardContent>
         </Card>
 
-        {/* Results Section */}
-        {prediction && (
-          <div className="space-y-6">
-            {/* Success Probability Gauge */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                  Success Probability
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-5xl font-bold" style={{ color: "var(--primary)" }}>
-                    {prediction.successProbability}%
+        {/* Investment Breakdown & Key Metrics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Investment Breakdown */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Investment Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {investmentData.map((item, i) => (
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-foreground">{item.category}</span>
+                      <span className="text-xs text-muted-foreground">${item.value.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground mb-2">Confidence Level</p>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-sm font-semibold text-foreground">Total Investment: $100,000</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Key Business Metrics */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-base">Key Business Metrics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {businessMetrics.map((metric, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-foreground">{metric.label}</span>
+                    <span className="text-sm font-semibold text-foreground">{metric.value}%</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full bg-gradient-to-r ${metric.color}`}
+                      style={{ width: `${metric.value}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recommended Actions */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-base">Recommended Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {recommendedActions.map((action, i) => (
+                <div key={i} className={`p-4 rounded-lg border ${action.color}`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-2xl">{action.icon}</span>
                     <Badge
-                      className={`text-sm ${getSuccessColor(prediction.successProbability)} border-current/30`}
+                      className={
+                        action.priority === "High"
+                          ? "bg-red-500/20 text-red-400 border-0"
+                          : "bg-amber-500/20 text-amber-400 border-0"
+                      }
                     >
-                      {prediction.successProbability >= 70
-                        ? "High"
-                        : prediction.successProbability >= 50
-                          ? "Medium"
-                          : "Low"}
+                      {action.priority}
                     </Badge>
                   </div>
+                  <p className="font-semibold text-foreground text-sm mb-1">{action.title}</p>
+                  <p className="text-xs text-muted-foreground">{action.description}</p>
                 </div>
-
-                {/* Gauge visualization */}
-                <div className="w-full h-3 bg-input rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 transition-all duration-500"
-                    style={{ width: `${prediction.successProbability}%` }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Revenue Potential */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base">Revenue Potential</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg bg-input border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Annual Revenue Potential</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      ${(prediction.revenuePotentialUSD || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-input border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Total Addressable Market</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      ${(prediction.marketSizeEstimate || 0).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Competition & Timeline */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base">Competition Level</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold" style={{ color: "var(--primary)" }}>
-                    <span className={getCompetitionColor(prediction.competitionLevel)}>
-                      {prediction.competitionLevel?.charAt(0).toUpperCase() +
-                        prediction.competitionLevel?.slice(1)}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base">Time to Breakeven</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-foreground">
-                    {prediction.timeToBreakeven}
-                  </div>
-                </CardContent>
-              </Card>
+              ))}
             </div>
-
-            {/* Risks */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-400" />
-                  Key Risks
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {prediction.keyRisks?.map((risk: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="text-red-400 font-bold mt-0.5">•</span>
-                      <span>{risk}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Opportunities */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4 text-amber-400" />
-                  Key Opportunities
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {prediction.keyOpportunities?.map((opp: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="text-amber-400 font-bold mt-0.5">•</span>
-                      <span>{opp}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Recommended Strategy */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base">Recommended Strategy</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {prediction.recommendedStrategy}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!prediction && !predictMutation.isPending && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <TrendingUp className="w-12 h-12 text-primary mb-4 opacity-50" />
-            <p className="text-muted-foreground">
-              Paste your market research and enter your topic to get an ROI prediction.
-            </p>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );

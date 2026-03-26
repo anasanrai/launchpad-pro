@@ -4,22 +4,23 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import AIInsights from "./pages/AIInsights";
 import MarketResearch from "./pages/MarketResearch";
 import CourseArchitect from "./pages/CourseArchitect";
 import ColdEmailer from "./pages/ColdEmailer";
+import ROIPredictor from "./pages/ROIPredictor";
 import AssetHistory from "./pages/AssetHistory";
 import AssetDetail from "./pages/AssetDetail";
 import Pricing from "./pages/Pricing";
-import Settings from "./pages/Settings";
-import ROIPredictor from "./pages/ROIPredictor";
+import Home from "./pages/Home";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/ai-insights" component={AIInsights} />
       <Route path="/market-research" component={MarketResearch} />
       <Route path="/course-architect" component={CourseArchitect} />
       <Route path="/cold-emailer" component={ColdEmailer} />
@@ -27,7 +28,6 @@ function Router() {
       <Route path="/assets/:id" component={AssetDetail} />
       <Route path="/roi-predictor" component={ROIPredictor} />
       <Route path="/pricing" component={Pricing} />
-      <Route path="/settings" component={Settings} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

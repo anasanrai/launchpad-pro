@@ -44,6 +44,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "AI Insights", href: "/ai-insights", icon: Sparkles, isNew: true },
   { label: "Market Research", href: "/market-research", icon: Search, isNew: false },
   { label: "ROI Predictor", href: "/roi-predictor", icon: TrendingUp, isNew: true },
   { label: "Course Architect", href: "/course-architect", icon: BookOpen },
