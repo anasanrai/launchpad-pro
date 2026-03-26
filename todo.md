@@ -94,3 +94,15 @@
 - [x] Document webhook configuration
 - [x] Create deployment runbook
 - [x] Final checkpoint and delivery
+
+
+## Phase 14: UI Redesign (Figma Design System)
+- [ ] Update CSS variables with new color palette and design tokens
+- [ ] Implement bento-grid dashboard layout
+- [ ] Build ROI Predictor circular gauge visualization
+- [ ] Redesign Landing Page with modern hero
+- [ ] Redesign Market Research page
+- [ ] Redesign Course Architect page
+- [ ] Redesign Cold Emailer page
+- [ ] Add animations and transitions
+- [ ] Test responsive design on all breakpoints
