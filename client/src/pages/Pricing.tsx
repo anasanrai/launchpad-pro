@@ -1,11 +1,12 @@
-import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PaddleCheckout } from "@/components/PaddleCheckout";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import AppLayout from "@/components/AppLayout";
 import {
   CheckCircle2,
   CreditCard,
@@ -58,25 +59,26 @@ export default function Pricing() {
   const currentPlan = subscriptionQuery.data?.plan;
   const plans = plansQuery.data ?? [];
 
-  const handleUpgrade = (planId: string) => {
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-
-    // In production: open Paddle checkout overlay
-    // For now: simulate activation
-    toast.info("Paddle checkout would open here", {
-      description: `Redirecting to secure payment for ${planId} plan...`,
-      duration: 3000,
+  const handleCheckoutSuccess = () => {
+    subscriptionQuery.refetch();
+    toast.success("Payment successful!", {
+      description: "Your subscription has been activated.",
     });
+  };
 
-    // Simulate activation after "payment"
-    setTimeout(() => {
-      activateMutation.mutate({
-        plan: planId as "starter" | "pro" | "agency",
-      });
-    }, 2000);
+  const handleCheckoutError = (error: Error) => {
+    toast.error("Payment failed", {
+      description: error.message,
+    });
+  };
+
+  const getPriceIdForPlan = (planId: string): string => {
+    const priceMap: Record<string, string> = {
+      starter: import.meta.env.VITE_PADDLE_PRICE_ID_STARTER || "",
+      pro: import.meta.env.VITE_PADDLE_PRICE_ID_PRO || "",
+      agency: import.meta.env.VITE_PADDLE_PRICE_ID_AGENCY || "",
+    };
+    return priceMap[planId] || "";
   };
 
   return (
@@ -178,20 +180,22 @@ export default function Pricing() {
                         <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-400" />
                         Current Plan
                       </Button>
-                    ) : (
+                    ) : !isAuthenticated ? (
                       <Button
                         className={`w-full ${isHighlighted ? "glow-primary-sm" : ""}`}
                         variant={isHighlighted ? "default" : "outline"}
-                        onClick={() => handleUpgrade(plan.id)}
-                        disabled={activateMutation.isPending}
+                        onClick={() => window.location.href = getLoginUrl()}
                       >
-                        {activateMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <CreditCard className="w-4 h-4 mr-2" />
-                        )}
-                        {isAuthenticated ? `Upgrade to ${plan.name}` : "Get Started"}
+                        Get Started
                       </Button>
+                    ) : (
+                      <PaddleCheckout
+                        tier={plan.id as "starter" | "pro" | "agency"}
+                        priceId={getPriceIdForPlan(plan.id)}
+                        onSuccess={handleCheckoutSuccess}
+                        onError={handleCheckoutError}
+                        isLoading={activateMutation.isPending}
+                      />
                     )}
                   </CardContent>
                 </Card>
