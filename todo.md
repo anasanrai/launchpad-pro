@@ -206,3 +206,15 @@
 - [ ] Test cross-browser compatibility
 - [ ] Optimize mobile responsiveness
 - [ ] Final security audit and hardening
+
+
+## Phase 18: v2 - Paddle Payment Integration (ACTIVE)
+- [x] Create Paddle webhook endpoint (/api/paddle/webhook)
+- [x] Implement webhook signature verification
+- [x] Add event dispatching to handlers
+- [x] Build Paddle checkout React component
+- [ ] Integrate checkout into Pricing page
+- [ ] Add subscription status to Settings page
+- [ ] Test end-to-end in Sandbox mode
+- [ ] Verify webhook delivery and processing
+- [ ] Test subscription lifecycle (create, upgrade, cancel)
