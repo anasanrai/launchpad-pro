@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
@@ -31,6 +30,8 @@ import { useState } from "react";
 import { Streamdown } from "streamdown";
 import { Link } from "wouter";
 import { exportToPDF } from "@/lib/pdf-export";
+import { useStream } from "@/hooks/useStream";
+import AppLayout from "@/components/AppLayout";
 
 const depthOptions = [
   { value: "quick", label: "Quick Scan", desc: "~2 min, key insights" },
@@ -54,6 +55,7 @@ export default function MarketResearch() {
   const [provider, setProvider] = useState<"auto" | "openrouter" | "gemini" | "openai" | "anthropic">("auto");
   const [result, setResult] = useState<{ content: string; assetId?: number; model: string; provider: string } | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const { stream, content: streamingContent, isLoading: isStreaming, error: streamError, reset: resetStream } = useStream();
 
   const generateMutation = trpc.marketResearch.generate.useMutation({
     onSuccess: (data) => {
@@ -67,47 +69,60 @@ export default function MarketResearch() {
     },
   });
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) {
       toast.error("Please enter a topic or industry");
       return;
     }
-    generateMutation.mutate({ topic, competitors, depth, provider, saveToAssets: true });
-  };
 
-  const handleCopy = () => {
-    if (result?.content) {
-      navigator.clipboard.writeText(result.content);
-      toast.success("Copied to clipboard");
+    resetStream();
+    
+    try {
+      const content = await stream("/api/stream/market-research", {
+        market: topic,
+        competitors,
+        depth,
+      });
+
+      if (content) {
+        setResult({
+          content,
+          model: "Streaming",
+          provider: provider || "auto",
+        });
+      }
+    } catch (err) {
+      toast.error("Streaming failed", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
     }
   };
 
-  const handleDownload = () => {
-    if (result?.content) {
-      const blob = new Blob([result.content], { type: "text/markdown" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `market-research-${topic.toLowerCase().replace(/\s+/g, "-")}.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Downloaded as Markdown");
+  const handleCopy = () => {
+    const contentToCopy = streamingContent || result?.content;
+    if (contentToCopy) {
+      navigator.clipboard.writeText(contentToCopy);
+      toast.success("Copied to clipboard!");
     }
   };
 
   const handleExportPDF = async () => {
-    if (!result?.content) return;
+    const contentToExport = streamingContent || result?.content;
+    if (!contentToExport) return;
+
     setIsExportingPDF(true);
     try {
-      await exportToPDF({
-        filename: `market-research-${topic.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
+           exportToPDF({
+        content: contentToExport,
+        filename: `Market-Research-${topic.replace(/\s+/g, "-")}.pdf`,
         title: `Market Research: ${topic}`,
-        content: result.content,
         type: "market_research",
       });
       toast.success("PDF exported successfully!");
     } catch (err) {
-      toast.error("Failed to export PDF");
+      toast.error("PDF export failed", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
     } finally {
       setIsExportingPDF(false);
     }
@@ -117,12 +132,12 @@ export default function MarketResearch() {
     return (
       <AppLayout title="Market Research">
         <div className="flex flex-col items-center justify-center h-full py-24 text-center px-4">
-          <Search className="w-16 h-16 text-violet-400 mb-6 opacity-80" />
+          <Search className="w-16 h-16 text-primary mb-6 opacity-80" />
           <h2 className="text-2xl font-bold text-foreground mb-3">AI Market Research</h2>
           <p className="text-muted-foreground mb-8 max-w-md">
-            Sign in to generate deep-dive competitor and market analysis reports.
+            Sign in to generate deep-dive market analysis reports powered by AI.
           </p>
-          <Button onClick={() => (window.location.href = getLoginUrl())}>Sign In to Access</Button>
+          <Button onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
         </div>
       </AppLayout>
     );
@@ -132,243 +147,179 @@ export default function MarketResearch() {
     <AppLayout
       title="AI Market Research"
       subtitle="Generate deep-dive competitor and market analysis reports"
-      actions={
-        result?.assetId && (
-          <Link href={`/assets/${result.assetId}`}>
-            <Button variant="outline" size="sm">
-              <BookmarkPlus className="w-4 h-4 mr-2" />
-              View Saved
-            </Button>
-          </Link>
-        )
-      }
     >
-      <div className="p-6 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Input Panel */}
-          <div className="lg:col-span-2 space-y-5">
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                    <Search className="w-3.5 h-3.5 text-violet-400" />
-                  </div>
-                  Research Parameters
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="topic" className="text-sm font-medium">
-                    Topic / Industry <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="topic"
-                    placeholder="e.g., AI-powered CRM for SMBs"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    className="bg-input border-border"
-                  />
-                </div>
+      <div className="p-6 max-w-5xl space-y-6">
+        {/* Input Form */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Search className="w-5 h-5 text-primary" />
+              Research Parameters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div>
+              <Label htmlFor="topic" className="text-sm font-medium">
+                Market or Industry
+              </Label>
+              <Input
+                id="topic"
+                placeholder="e.g., AI-powered CRM for SMBs, Fitness Tech, SaaS Analytics"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                disabled={isStreaming || generateMutation.isPending}
+                className="mt-2"
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="competitors" className="text-sm font-medium">
-                    Competitors to Analyze
-                    <span className="text-muted-foreground text-xs ml-1">(optional)</span>
-                  </Label>
-                  <Textarea
-                    id="competitors"
-                    placeholder="e.g., Salesforce, HubSpot, Pipedrive&#10;(leave blank to auto-identify)"
-                    value={competitors}
-                    onChange={(e) => setCompetitors(e.target.value)}
-                    rows={3}
-                    className="bg-input border-border resize-none"
-                  />
-                </div>
+            <div>
+              <Label htmlFor="competitors" className="text-sm font-medium">
+                Key Competitors (comma-separated)
+              </Label>
+              <Textarea
+                id="competitors"
+                placeholder="e.g., Salesforce, HubSpot, Pipedrive"
+                value={competitors}
+                onChange={(e) => setCompetitors(e.target.value)}
+                disabled={isStreaming || generateMutation.isPending}
+                className="mt-2 min-h-20"
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Research Depth</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {depthOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setDepth(opt.value as typeof depth)}
-                        className={`p-2.5 rounded-lg border text-left transition-all ${
-                          depth === opt.value
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-input text-muted-foreground hover:border-border/80"
-                        }`}
-                      >
-                        <div className="text-xs font-semibold">{opt.label}</div>
-                        <div className="text-xs opacity-70 mt-0.5">{opt.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">AI Provider</Label>
-                  <Select
-                    value={provider}
-                    onValueChange={(v) => setProvider(v as typeof provider)}
-                  >
-                    <SelectTrigger className="bg-input border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {providerOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  className="w-full glow-primary-sm"
-                  onClick={handleGenerate}
-                  disabled={generateMutation.isPending || !topic.trim()}
-                >
-                  {generateMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating Report...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Report
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Tips */}
-            <Card className="bg-card border-border">
-              <CardContent className="p-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Pro Tips
-                </h3>
-                <div className="space-y-2">
-                  {[
-                    "Be specific: 'AI CRM for e-commerce' beats 'CRM software'",
-                    "Name 3-5 competitors for more targeted analysis",
-                    "Use Comprehensive depth for investor-ready reports",
-                    "Reports are auto-saved to your Asset Library",
-                  ].map((tip) => (
-                    <div key={tip} className="flex items-start gap-2 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                      {tip}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Output Panel */}
-          <div className="lg:col-span-3">
-            {generateMutation.isPending ? (
-              <Card className="bg-card border-border h-full min-h-96">
-                <CardContent className="flex flex-col items-center justify-center h-full py-20">
-                  <div className="relative mb-6">
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="w-8 h-8 text-primary" />
-                    </div>
-                    <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Analyzing Market...
-                  </h3>
-                  <p className="text-sm text-muted-foreground text-center max-w-xs">
-                    Researching competitors, market size, and strategic opportunities for{" "}
-                    <span className="text-primary font-medium">{topic}</span>
-                  </p>
-                  <div className="mt-6 flex gap-2">
-                    {["Scanning competitors", "Sizing market", "Building strategy"].map(
-                      (step, i) => (
-                        <div
-                          key={step}
-                          className="text-xs text-muted-foreground flex items-center gap-1"
-                          style={{ animationDelay: `${i * 0.5}s` }}
-                        >
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          {step}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="depth" className="text-sm font-medium">
+                  Analysis Depth
+                </Label>
+                <Select value={depth} onValueChange={(v) => setDepth(v as any)} disabled={isStreaming || generateMutation.isPending}>
+                  <SelectTrigger id="depth" className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {depthOptions.map(({ value, label, desc }) => (
+                      <SelectItem key={value} value={value}>
+                        <div className="flex flex-col">
+                          <span>{label}</span>
+                          <span className="text-xs text-muted-foreground">{desc}</span>
                         </div>
-                      )
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : result ? (
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-3 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <CardTitle className="text-sm">Report Generated</CardTitle>
-                      <Badge variant="outline" className="text-xs text-muted-foreground">
-                        {result.provider} · {result.model.split("/").pop()?.split("-").slice(0, 3).join("-")}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={handleCopy}>
-                        <Copy className="w-3.5 h-3.5 mr-1.5" />
-                        Copy
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleDownload}>
-                        <Download className="w-3.5 h-3.5 mr-1.5" />
-                        .md
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExportingPDF}>
-                        {isExportingPDF ? (
-                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                        ) : (
-                          <Download className="w-3.5 h-3.5 mr-1.5" />
-                        )}
-                        PDF
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-5 max-h-[calc(100vh-220px)] overflow-y-auto">
-                  <Streamdown>{result.content}</Streamdown>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="bg-card border-border h-full min-h-96">
-                <CardContent className="flex flex-col items-center justify-center h-full py-20">
-                  <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-5">
-                    <Search className="w-8 h-8 text-violet-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Ready to Research
-                  </h3>
-                  <p className="text-sm text-muted-foreground text-center max-w-xs mb-6">
-                    Enter your topic and click Generate to produce a comprehensive market
-                    analysis report.
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground max-w-xs">
-                    {[
-                      "Competitive landscape",
-                      "Market sizing (TAM)",
-                      "Customer profiles",
-                      "Go-to-market strategy",
-                      "Risk assessment",
-                      "Action roadmap",
-                    ].map((item) => (
-                      <div key={item} className="flex items-center gap-1.5">
-                        <Zap className="w-3 h-3 text-violet-400" />
-                        {item}
-                      </div>
+                      </SelectItem>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="provider" className="text-sm font-medium">
+                  AI Provider
+                </Label>
+                <Select value={provider} onValueChange={(v) => setProvider(v as any)} disabled={isStreaming || generateMutation.isPending}>
+                  <SelectTrigger id="provider" className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providerOptions.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleGenerate}
+              disabled={isStreaming || generateMutation.isPending || !topic.trim()}
+              className="w-full"
+              size="lg"
+            >
+              {isStreaming || generateMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Report...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Market Research
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Streaming Status */}
+        {isStreaming && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <p className="text-sm text-foreground">
+                  Generating report... {streamingContent.length} characters received
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error Display */}
+        {streamError && (
+          <Card className="bg-destructive/5 border-destructive/20">
+            <CardContent className="pt-6">
+              <p className="text-sm text-destructive">{streamError.message}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Results */}
+        {(streamingContent || result?.content) && (
+          <Card className="bg-card border-border">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Market Research Report</CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopy}
+                  disabled={isStreaming}
+                >
+                  <Copy className="w-4 h-4 mr-1" />
+                  Copy
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExportPDF}
+                  disabled={isStreaming || isExportingPDF}
+                >
+                  {isExportingPDF ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-1" />
+                  )}
+                  PDF
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-invert max-w-none">
+                <Streamdown>{streamingContent || result?.content || ""}</Streamdown>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty State */}
+        {!streamingContent && !result?.content && !isStreaming && (
+          <Card className="bg-card border-border">
+            <CardContent className="pt-12 pb-12 text-center">
+              <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground">
+                Enter a market or industry to generate a comprehensive analysis report.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );
