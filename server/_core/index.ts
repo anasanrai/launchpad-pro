@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import paddleWebhookRouter from "../api/paddle-webhook";
+import streamingRouter from "../api/streaming";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +39,8 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Paddle webhook endpoint
   app.use("/api/paddle", paddleWebhookRouter);
+  // Streaming API (SSE)
+  app.use("/api/stream", streamingRouter);
   // tRPC API
   app.use(
     "/api/trpc",
