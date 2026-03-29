@@ -7,19 +7,21 @@
     "NODE_ENV": "production"
   },
   "functions": {
-    "server/_core/index.ts": {
+    "dist/index.js": {
+      "runtime": "nodejs24.x",
       "memory": 1024,
       "maxDuration": 60
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "src": "/api/.*",
+      "dest": "/dist/index.js",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/dist/index.js"
     }
   ],
   "headers": [
