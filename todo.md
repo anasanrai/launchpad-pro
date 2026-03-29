@@ -144,3 +144,65 @@
 - [ ] Integrate logo across all pages
 - [ ] Apply consistent visual language everywhere
 - [ ] Test responsive design on all pages
+
+
+## Phase 18: v2 - Paddle Payment Integration
+- [ ] Install Paddle SDK and dependencies
+- [ ] Create Paddle webhook handler endpoint (/api/paddle/webhook)
+- [ ] Implement webhook signature verification
+- [ ] Add subscription event handlers (activated, updated, cancelled)
+- [ ] Update subscription status in database after payment
+- [ ] Build subscription management UI (upgrade, downgrade, cancel)
+- [ ] Implement usage-based rate limiting per tier
+- [ ] Add subscription status display in Settings page
+- [ ] Test Paddle Sandbox mode end-to-end
+- [ ] Document Paddle setup for production
+
+## Phase 19: v2 - AI Streaming & Real Providers
+- [ ] Install streaming dependencies (eventsource, server-sent-events)
+- [ ] Implement SSE streaming endpoint for AI generation
+- [ ] Connect OpenRouter API with real credentials
+- [ ] Connect Gemini API with real credentials
+- [ ] Connect OpenAI API with real credentials
+- [ ] Connect Anthropic API with real credentials
+- [ ] Implement provider fallback logic with retries
+- [ ] Add provider health monitoring
+- [ ] Update Market Research to use streaming
+- [ ] Update Course Architect to use streaming
+- [ ] Update Cold Emailer to use streaming
+- [ ] Add streaming UI with real-time progress indicators
+
+## Phase 20: v2 - Power User Features
+- [ ] Build CSV importer for Cold Emailer
+- [ ] Implement bulk email generation from CSV
+- [ ] Add dashboard widget customization (pin/unpin)
+- [ ] Implement widget reordering and layout persistence
+- [ ] Add PDF export for Course Curricula
+- [ ] Add PDF export for Email campaigns
+- [ ] Add CSV export for ROI Predictor metrics
+- [ ] Create saved templates system
+- [ ] Build template management UI
+- [ ] Add quick-start workflows
+
+## Phase 21: v2 - Enterprise Features
+- [ ] Design team collaboration schema
+- [ ] Implement team creation and member management
+- [ ] Add role-based access control (admin, member, viewer)
+- [ ] Build team settings UI
+- [ ] Create REST API for programmatic access
+- [ ] Implement API key management
+- [ ] Add advanced analytics dashboard
+- [ ] Create audit logs system
+- [ ] Build audit logs viewer
+
+## Phase 22: v2 - Performance, Security & Polish
+- [ ] Implement code splitting and lazy loading
+- [ ] Add caching strategy
+- [ ] Optimize images and assets
+- [ ] Implement rate limiting
+- [ ] Add input validation and sanitization
+- [ ] Implement CORS security headers
+- [ ] Write E2E tests for critical flows
+- [ ] Test cross-browser compatibility
+- [ ] Optimize mobile responsiveness
+- [ ] Final security audit and hardening

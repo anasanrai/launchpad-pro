@@ -7,4 +7,23 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Paddle Sandbox
+  paddleApiKeySandbox: process.env.PADDLE_API_KEY_SANDBOX ?? "",
+  paddleWebhookSecretSandbox: process.env.PADDLE_WEBHOOK_SECRET_SANDBOX ?? "",
+  paddleProductIdStarterSandbox: process.env.PADDLE_PRODUCT_ID_STARTER_SANDBOX ?? "",
+  paddlePriceIdStarterSandbox: process.env.PADDLE_PRICE_ID_STARTER_SANDBOX ?? "",
+  paddleProductIdProSandbox: process.env.PADDLE_PRODUCT_ID_PRO_SANDBOX ?? "",
+  paddlePriceIdProSandbox: process.env.PADDLE_PRICE_ID_PRO_SANDBOX ?? "",
+  paddleProductIdAgencySandbox: process.env.PADDLE_PRODUCT_ID_AGENCY_SANDBOX ?? "",
+  paddlePriceIdAgencySandbox: process.env.PADDLE_PRICE_ID_AGENCY_SANDBOX ?? "",
+  // Paddle Live
+  paddleApiKeyLive: process.env.PADDLE_API_KEY_LIVE ?? "",
+  paddleWebhookSecretLive: process.env.PADDLE_WEBHOOK_SECRET_LIVE ?? "",
+  paddleProductIdStarterLive: process.env.PADDLE_PRODUCT_ID_STARTER_LIVE ?? "",
+  paddlePriceIdStarterLive: process.env.PADDLE_PRICE_ID_STARTER_LIVE ?? "",
+  paddleProductIdProLive: process.env.PADDLE_PRODUCT_ID_PRO_LIVE ?? "",
+  paddlePriceIdProLive: process.env.PADDLE_PRICE_ID_PRO_LIVE ?? "",
+  paddleProductIdAgencyLive: process.env.PADDLE_PRODUCT_ID_AGENCY_LIVE ?? "",
+  paddlePriceIdAgencyLive: process.env.PADDLE_PRICE_ID_AGENCY_LIVE ?? "",
+  paddleEnvironment: (process.env.PADDLE_ENVIRONMENT ?? "sandbox") as "sandbox" | "live",
 };
