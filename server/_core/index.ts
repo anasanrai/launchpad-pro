@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import paddleWebhookRouter from "../api/paddle-webhook";
 import streamingRouter from "../api/streaming";
+import csvImporterRouter from "../api/csv-importer";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -41,6 +42,8 @@ async function startServer() {
   app.use("/api/paddle", paddleWebhookRouter);
   // Streaming API (SSE)
   app.use("/api/stream", streamingRouter);
+  // CSV Importer API
+  app.use("/api/csv", csvImporterRouter);
   // tRPC API
   app.use(
     "/api/trpc",

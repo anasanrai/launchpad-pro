@@ -231,3 +231,15 @@
 - [x] Update Cold Emailer page with streaming UI
 - [x] Add loading animations and progress indicators
 - [x] Test streaming with real AI providers
+
+
+## Phase 20: v2 - Power User Features (COMPLETE)
+- [x] Build CSV bulk lead importer for Cold Emailer
+- [x] Implement batch email generation from CSV
+- [x] Add progress tracking for bulk operations
+- [x] Dashboard widget customization (pin/unpin)
+- [x] Dashboard layout persistence to database
+- [x] Advanced export (PDF, CSV, Markdown) for all reports
+- [x] Build saved templates and quick-start workflows
+- [x] Test bulk operations with large datasets
+- [x] Performance optimization for batch processing
